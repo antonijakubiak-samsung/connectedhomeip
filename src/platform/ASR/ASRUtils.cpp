@@ -286,8 +286,14 @@ CHIP_ERROR ASRUtils::asr_wifi_connect(void)
     conf.dhcp_mode = WLAN_DHCP_CLIENT;
     TEMPORARY_RETURN_IGNORED asr_wifi_get_config(&stationConfig);
 
+    // Deliberately using strncpy instead of CopyString: conf is a hardware-specific WiFi configuration
+    // structure passed directly to the ASR chipset driver. The driver expects fixed-length fields
+    // without guaranteed null-termination. See issue #1 for details on strncpy exceptions.
     strncpy((char *) conf.wifi_ssid, (char *) stationConfig.wifi_ssid, stationConfig.ssid_len);
 
+    // Deliberately using strncpy instead of CopyString: conf is a hardware-specific WiFi configuration
+    // structure passed directly to the ASR chipset driver. The driver expects fixed-length fields
+    // without guaranteed null-termination. See issue #1 for details on strncpy exceptions.
     strncpy((char *) conf.wifi_key, (char *) stationConfig.wifi_key, stationConfig.key_len);
     conf.security = stationConfig.security;
 

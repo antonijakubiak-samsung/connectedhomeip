@@ -233,12 +233,12 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** 
     ifp->offPremiseServicesReachableIPv4.SetNull();
     ifp->offPremiseServicesReachableIPv6.SetNull();
     ifp->type = app::Clusters::GeneralDiagnostics::InterfaceTypeEnum::kThread;
-    TEMPORARY_RETURN_IGNORED ConfigurationMgr().GetPrimary802154MACAddress(ifp->MacAddress);
+    TEMPORARY_RETURN_IGNORED ConfigurationMgr().GetPrimary802154MACAddress(ifp -> MacAddress);
     ifp->hardwareAddress = ByteSpan(ifp->MacAddress, kMaxHardwareAddrSize);
 #elif CHIP_DEVICE_CONFIG_ENABLE_WPA
     struct netif * netif = nullptr;
     netif                = static_cast<struct netif *>(net_get_mlan_handle());
-    strncpy(ifp->Name, "wlan0", Inet::InterfaceId::kMaxIfNameLength);
+    chip::Platform::CopyString(ifp->Name, "wlan0");
     ifp->name          = CharSpan(ifp->Name, strlen(ifp->Name));
     ifp->isOperational = true;
     ifp->offPremiseServicesReachableIPv4.SetNull();

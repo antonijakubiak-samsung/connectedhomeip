@@ -157,11 +157,17 @@ CHIP_ERROR BflbWiFiDriver::ConnectWiFiNetwork(const char * ssid, uint8_t ssidLen
 
     ConnectivityMgrImpl().ChangeWiFiStationState(ConnectivityManager::kWiFiStationState_Connecting);
 
+    // Deliberately using strncpy instead of CopyString: conn_param is a hardware-specific WiFi
+    // connection structure passed directly to the BL616 WiFi driver. The driver expects fixed-length
+    // fields without guaranteed null-termination. See issue #1 for details on strncpy exceptions.
     strncpy((char *) conn_param.ssid, ssid, ssidLen);
     conn_param.ssid_len = ssidLen;
 
     if (keyLen)
     {
+        // Deliberately using strncpy instead of CopyString: conn_param is a hardware-specific WiFi
+        // connection structure passed directly to the BL616 WiFi driver. The driver expects fixed-length
+        // fields without guaranteed null-termination. See issue #1 for details on strncpy exceptions.
         strncpy((char *) conn_param.key, key, keyLen);
         conn_param.key_len = keyLen;
     }
