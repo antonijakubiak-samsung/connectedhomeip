@@ -25,6 +25,7 @@
 #include <glib.h>
 
 #include <ble/Ble.h>
+#include <lib/support/CHIPMemString.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/ConfigurationManager.h>
@@ -119,11 +120,11 @@ CHIP_ERROR BluezAdvertisement::Init(BluezAdapter1 * apAdapter, const char * aAdv
     GAutoPtr<char> rootPath;
     g_object_get(G_OBJECT(mEndpoint.GetGattApplicationObjectManager()), "object-path", &rootPath.GetReceiver(), nullptr);
     g_snprintf(mAdvPath, sizeof(mAdvPath), "%s/advertising", rootPath.get());
-    g_strlcpy(mAdvUUID, aAdvUUID, sizeof(mAdvUUID));
+    chip::Platform::CopyString(mAdvUUID, aAdvUUID);
 
     if (aAdvName != nullptr)
     {
-        g_strlcpy(mAdvName, aAdvName, sizeof(mAdvName));
+        chip::Platform::CopyString(mAdvName, aAdvName);
     }
     else
     {
@@ -131,8 +132,8 @@ CHIP_ERROR BluezAdvertisement::Init(BluezAdapter1 * apAdapter, const char * aAdv
         g_snprintf(mAdvName, sizeof(mAdvName), "%s%04x", CHIP_DEVICE_CONFIG_BLE_DEVICE_NAME_PREFIX, getpid() & 0xffff);
     }
 
-    CHIP_ERROR err = PlatformMgrImpl().GLibMatterContextInvokeSync(
-        +[](BluezAdvertisement * self) { return self->InitImpl(); }, this);
+    CHIP_ERROR err =
+        PlatformMgrImpl().GLibMatterContextInvokeSync(+[](BluezAdvertisement * self) { return self->InitImpl(); }, this);
     VerifyOrReturnError(err == CHIP_NO_ERROR, err,
                         ChipLogError(Ble, "Failed to schedule BLE advertisement Init() on CHIPoBluez thread"));
 
@@ -269,8 +270,7 @@ CHIP_ERROR BluezAdvertisement::Start()
 {
     VerifyOrReturnError(mIsInitialized, CHIP_ERROR_INCORRECT_STATE);
     VerifyOrReturnValue(!mIsAdvertising, CHIP_NO_ERROR, ChipLogDetail(DeviceLayer, "BLE advertising already started"));
-    return PlatformMgrImpl().GLibMatterContextInvokeSync(
-        +[](BluezAdvertisement * self) { return self->StartImpl(); }, this);
+    return PlatformMgrImpl().GLibMatterContextInvokeSync(+[](BluezAdvertisement * self) { return self->StartImpl(); }, this);
 }
 
 void BluezAdvertisement::StopDone(GObject * aObject, GAsyncResult * aResult)
@@ -320,8 +320,7 @@ CHIP_ERROR BluezAdvertisement::Stop()
 {
     VerifyOrReturnError(mIsInitialized, CHIP_ERROR_INCORRECT_STATE);
     VerifyOrReturnValue(mIsAdvertising, CHIP_NO_ERROR, ChipLogDetail(DeviceLayer, "BLE advertising already stopped"));
-    return PlatformMgrImpl().GLibMatterContextInvokeSync(
-        +[](BluezAdvertisement * self) { return self->StopImpl(); }, this);
+    return PlatformMgrImpl().GLibMatterContextInvokeSync(+[](BluezAdvertisement * self) { return self->StopImpl(); }, this);
 }
 
 } // namespace Internal

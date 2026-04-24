@@ -54,8 +54,12 @@ inline void CopyString(char * dest, size_t destLength, const char * source)
 {
     if (dest && destLength)
     {
-        strncpy(dest, source, destLength);
-        dest[destLength - 1] = 0;
+        // Use strlen + memcpy instead of strncpy to avoid zero-padding overhead.
+        // This is equivalent to strlcpy behavior but portable across all platforms.
+        size_t sourceLen = strlen(source);
+        size_t copyLen   = (sourceLen < destLength) ? sourceLen : destLength - 1;
+        memcpy(dest, source, copyLen);
+        dest[copyLen] = '\0';
     }
 }
 
