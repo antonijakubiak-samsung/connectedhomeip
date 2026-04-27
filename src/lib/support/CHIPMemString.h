@@ -54,19 +54,8 @@ inline void CopyString(char * dest, size_t destLength, const char * source)
 {
     if (dest && destLength)
     {
-        if (source)
-        {
-            // Use strlen + memcpy instead of strncpy to avoid zero-padding overhead.
-            // This is equivalent to strlcpy behavior but portable across all platforms.
-            size_t sourceLen = strnlen(source, destLength);
-            size_t copyLen   = (sourceLen < destLength) ? sourceLen : destLength - 1;
-            memcpy(dest, source, copyLen);
-            dest[copyLen] = '\0';
-        }
-        else
-        {
-            dest[0] = '\0';
-        }
+        strncpy(dest, source, destLength);
+        dest[destLength - 1] = 0;
     }
 }
 
@@ -175,11 +164,7 @@ inline char * MemoryAllocString(const char * string, size_t length)
 {
     size_t lengthWithNull = length + 1;
     char * result         = static_cast<char *>(MemoryAlloc(lengthWithNull));
-    // Use strncpy to maintain documented zero-padding behavior:
-    // "if the string is shorter than length, then the remaining space
-    // will be filled with null bytes."
-    strncpy(result, string, lengthWithNull);
-    result[length] = '\0';
+    CopyString(result, lengthWithNull, string);
     return result;
 }
 
@@ -203,12 +188,9 @@ public:
     {
         size_t lengthWithNull = length + 1;
 
-        // Use strncpy to maintain documented zero-padding behavior:
-        // "if the string is shorter than length, then the remaining space
-        // will be filled with null bytes."
-        strncpy(Alloc(lengthWithNull).Get(), string, lengthWithNull);
-        // Ensure null-termination (strncpy doesn't guarantee it if source >= dest size)
-        Get()[length] = '\0';
+        // We must convert the source string to a CharSpan, so we call the
+        // version of CopyString that handles unterminated strings.
+        CopyString(Alloc(lengthWithNull).Get(), lengthWithNull, CharSpan(string, length));
     }
 };
 
