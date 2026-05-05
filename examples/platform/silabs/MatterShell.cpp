@@ -26,6 +26,7 @@
 #include "sl_cli.h"
 #include "sl_cli_config.h"
 #include "sli_cli_io.h"
+#include <lib/support/StringBuilder.h>
 #endif
 
 using namespace ::chip;
@@ -72,36 +73,28 @@ CHIP_ERROR CmdSilabsDispatch(int argc, char ** argv)
 {
     CHIP_ERROR error = CHIP_NO_ERROR;
 
-    char buff[SL_CLI_INPUT_BUFFER_SIZE] = { 0 };
-    char * buff_ptr                     = buff;
-    int i                               = 0;
-
     VerifyOrExit(argc > 0, error = CHIP_ERROR_INVALID_ARGUMENT);
 
-    for (i = 0; i < argc; i++)
+    // Create a stack-allocated buffer of the specified size
+    chip::StringBuilder<SL_CLI_INPUT_BUFFER_SIZE> builder;
+
+    for (int i = 0; i < argc; i++)
     {
-        size_t arg_len = strlen(argv[i]);
-
-        /* Make sure that the next argument won't overflow the buffer */
-        VerifyOrExit(buff_ptr + arg_len < buff + SL_CLI_INPUT_BUFFER_SIZE, error = CHIP_ERROR_BUFFER_TOO_SMALL);
-
-        // Deliberately using strncpy: building a command buffer by concatenating arguments.
-        // Each argument is copied with its exact length without null-termination between them.
-        // The final buffer will be null-terminated after all arguments are appended.
-        strncpy(buff_ptr, argv[i], arg_len); // NOLINT(bugprone-unsafe-functions)
-        buff_ptr += arg_len;
-
-        /* Make sure that there is enough buffer for a space char */
-        if (buff_ptr + sizeof(char) < buff + SL_CLI_INPUT_BUFFER_SIZE)
-        {
-            *buff_ptr++ = ' ';
-        }
+        // Add() automatically checks buffer boundaries and prevents overflows
+        builder.Add(argv[i]);
+        builder.Add(" "); 
     }
-    buff_ptr = 0;
-    sl_cli_handle_input(sl_cli_default_handle, buff);
+
+    // builder.Fit() returns 'false' if space ran out during any of the Add() calls
+    VerifyOrExit(builder.Fit(), error = CHIP_ERROR_BUFFER_TOO_SMALL);
+
+    // c_str() guarantees proper null-termination ('\0')
+    sl_cli_handle_input(sl_cli_default_handle, builder.c_str());
+
 exit:
     return error;
 }
+
 
 static const Shell::shell_command_t cmds_silabs_root = { &CmdSilabsDispatch, "silabs", "Dispatch Silicon Labs CLI command" };
 

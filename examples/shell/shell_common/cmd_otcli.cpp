@@ -39,6 +39,7 @@
 #include <openthread/ip6.h>
 #include <openthread/link.h>
 #include <openthread/thread.h>
+#include <lib/support/StringBuilder.h>
 #if OPENTHREAD_API_VERSION >= 85
 #if !CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI
 #ifndef SHELL_OTCLI_TX_BUFFER_SIZE
@@ -78,46 +79,46 @@ CHIP_ERROR cmd_otcli_help(int argc, char ** argv)
 
 #if CHIP_TARGET_STYLE_EMBEDDED
 
+#include <lib/support/StringBuilder.h>
+
 CHIP_ERROR cmd_otcli_dispatch(int argc, char ** argv)
 {
     CHIP_ERROR error = CHIP_NO_ERROR;
 
-    char buff[kMaxLineLength] = { 0 };
-    char * buff_ptr           = buff;
-    int i                     = 0;
-
     VerifyOrExit(argc > 0, error = CHIP_ERROR_INVALID_ARGUMENT);
 
-    for (i = 0; i < argc; i++)
+    // Create a stack-allocated buffer of the specified maximum length
+    chip::StringBuilder<kMaxLineLength> builder;
+
+    for (int i = 0; i < argc; i++)
     {
-        size_t arg_len = strlen(argv[i]);
-
-        /* Make sure that the next argument won't overflow the buffer */
-        VerifyOrExit(buff_ptr + arg_len < buff + kMaxLineLength, error = CHIP_ERROR_BUFFER_TOO_SMALL);
-
-        // Deliberately using strncpy: building a command buffer by concatenating arguments.
-        // Each argument is copied with its exact length without null-termination between them.
-        // The final buffer will be null-terminated after all arguments are appended.
-        strncpy(buff_ptr, argv[i], arg_len); // NOLINT(bugprone-unsafe-functions)
-        buff_ptr += arg_len;
-
-        /* Make sure that there is enough buffer for a space char */
-        if (buff_ptr + sizeof(char) < buff + kMaxLineLength)
-        {
-            *buff_ptr++ = ' ';
-        }
+        // Add() safely concatenates strings and prevents buffer overflows.
+        // We append a space after each argument to reconstruct the command line.
+        builder.Add(argv[i]);
+        builder.Add(" ");
     }
-    buff_ptr = 0;
+
+    // Verify if all arguments and spaces successfully fit into the buffer.
+    // If not, return an error rather than sending a truncated command.
+    VerifyOrExit(builder.Fit(), error = CHIP_ERROR_BUFFER_TOO_SMALL);
+
     chip::DeviceLayer::ThreadStackMgr().LockThreadStack();
+
 #if OPENTHREAD_API_VERSION >= 85
-    otCliInputLine(buff);
+    // builder.c_str() guarantees proper null-termination.
+    // const_cast is used just in case the legacy OpenThread API lacks 'const' in its signature.
+    otCliInputLine(const_cast<char *>(builder.c_str()));
 #else
-    otCliConsoleInputLine(buff, buff_ptr - buff);
+    // Safely calculate the actual string length using standard strlen()
+    otCliConsoleInputLine(const_cast<char *>(builder.c_str()), strlen(builder.c_str()));
 #endif
+
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
+
 exit:
     return error;
 }
+
 
 #elif CHIP_TARGET_STYLE_UNIX
 
