@@ -82,7 +82,7 @@ CHIP_ERROR CmdSilabsDispatch(int argc, char ** argv)
     {
         // Add() automatically checks buffer boundaries and prevents overflows
         builder.Add(argv[i]);
-        builder.Add(" "); 
+        builder.Add(" ");
     }
 
     // builder.Fit() returns 'false' if space ran out during any of the Add() calls
@@ -94,7 +94,6 @@ CHIP_ERROR CmdSilabsDispatch(int argc, char ** argv)
 exit:
     return error;
 }
-
 
 static const Shell::shell_command_t cmds_silabs_root = { &CmdSilabsDispatch, "silabs", "Dispatch Silicon Labs CLI command" };
 

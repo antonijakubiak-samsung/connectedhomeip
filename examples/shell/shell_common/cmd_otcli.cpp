@@ -34,12 +34,12 @@
 #include <platform/ThreadStackManager.h>
 
 #if CHIP_TARGET_STYLE_EMBEDDED
+#include <lib/support/StringBuilder.h>
 #include <openthread/cli.h>
 #include <openthread/instance.h>
 #include <openthread/ip6.h>
 #include <openthread/link.h>
 #include <openthread/thread.h>
-#include <lib/support/StringBuilder.h>
 #if OPENTHREAD_API_VERSION >= 85
 #if !CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI
 #ifndef SHELL_OTCLI_TX_BUFFER_SIZE
@@ -118,7 +118,6 @@ CHIP_ERROR cmd_otcli_dispatch(int argc, char ** argv)
 exit:
     return error;
 }
-
 
 #elif CHIP_TARGET_STYLE_UNIX
 
