@@ -290,7 +290,7 @@ CHIP_ERROR ASRUtils::asr_wifi_connect(void)
     // structure passed directly to the ASR chipset driver. The driver expects fixed-length fields
     // without guaranteed null-termination.
     strncpy((char *) conf.wifi_ssid, (char *) stationConfig.wifi_ssid, stationConfig.ssid_len); // NOLINT(bugprone-unsafe-functions)
-    strncpy((char *) conf.wifi_key, (char *) stationConfig.wifi_key, stationConfig.key_len); // NOLINT(bugprone-unsafe-functions)
+    strncpy((char *) conf.wifi_key, (char *) stationConfig.wifi_key, stationConfig.key_len);    // NOLINT(bugprone-unsafe-functions)
 
     conf.security = stationConfig.security;
 
