@@ -85,7 +85,7 @@ CHIP_ERROR cmd_otcli_dispatch(int argc, char ** argv)
 
     VerifyOrExit(argc > 0, error = CHIP_ERROR_INVALID_ARGUMENT);
 
-    { 
+    {
         // Create a stack-allocated buffer of the specified maximum length
         chip::StringBuilder<kMaxLineLength> builder;
 
@@ -111,7 +111,7 @@ CHIP_ERROR cmd_otcli_dispatch(int argc, char ** argv)
         otCliConsoleInputLine(const_cast<char *>(builder.c_str()), strlen(builder.c_str()));
 #endif
         chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
-    } 
+    }
 
 exit:
     return error;
