@@ -98,7 +98,7 @@ CHIP_ERROR cmd_otcli_dispatch(int argc, char ** argv)
         // Deliberately using strncpy: building a command buffer by concatenating arguments.
         // Each argument is copied with its exact length without null-termination between them.
         // The final buffer will be null-terminated after all arguments are appended.
-        strncpy(buff_ptr, argv[i], arg_len);
+        strncpy(buff_ptr, argv[i], arg_len); // NOLINT(bugprone-unsafe-functions)
         buff_ptr += arg_len;
 
         /* Make sure that there is enough buffer for a space char */
