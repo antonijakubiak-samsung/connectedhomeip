@@ -272,7 +272,7 @@ void BflbWiFiDriver::OnScanWiFiNetworkDone(void * opaque)
             p->security.SetRaw(pmsg->records[i].auth_mode);
             // Deliberately using strncpy instead of CopyString: p->ssid is part of a WiFi scan result
             // structure with fixed-length fields used by the BL702 WiFi driver.
-            strncpy((char *) p->ssid, (const char *) pmsg->records[i].ssid, kMaxWiFiSSIDLength);
+            strncpy((char *) p->ssid, (const char *) pmsg->records[i].ssid, kMaxWiFiSSIDLength); // NOLINT(bugprone-unsafe-functions)
             p->ssidLen         = strlen((char *) pmsg->records[i].ssid);
             p->channel         = pmsg->records[i].channel;
             p->wiFiBand        = chip::DeviceLayer::NetworkCommissioning::WiFiBand::k2g4;

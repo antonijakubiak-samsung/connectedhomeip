@@ -160,7 +160,8 @@ CHIP_ERROR BflbWiFiDriver::ConnectWiFiNetwork(const char * ssid, uint8_t ssidLen
     // Deliberately using strncpy instead of CopyString: conn_param is a hardware-specific WiFi
     // connection structure passed directly to the BL616 WiFi driver. The driver expects fixed-length
     // fields without guaranteed null-termination.
-    strncpy((char *) conn_param.ssid, ssid, ssidLen);
+    strncpy((char *) conn_param.ssid, ssid, ssidLen); // NOLINT(bugprone-unsafe-functions)
+
     conn_param.ssid_len = ssidLen;
 
     if (keyLen)
@@ -168,7 +169,8 @@ CHIP_ERROR BflbWiFiDriver::ConnectWiFiNetwork(const char * ssid, uint8_t ssidLen
         // Deliberately using strncpy instead of CopyString: conn_param is a hardware-specific WiFi
         // connection structure passed directly to the BL616 WiFi driver. The driver expects fixed-length
         // fields without guaranteed null-termination.
-        strncpy((char *) conn_param.key, key, keyLen);
+        strncpy((char *) conn_param.key, key, keyLen); // NOLINT(bugprone-unsafe-functions)
+
         conn_param.key_len = keyLen;
     }
     conn_param.freq1         = 0;

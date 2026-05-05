@@ -23,7 +23,6 @@ Checks: >
   -bugprone-misplaced-widening-cast,
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-narrowing-conversions,
-  -bugprone-not-null-terminated-result,
   -bugprone-pointer-arithmetic-on-polymorphic-object,
   -bugprone-reserved-identifier,
   -bugprone-signed-char-misuse,
@@ -51,3 +50,5 @@ Checks: >
   -clang-diagnostic-missing-template-arg-list-after-template-kw
 WarningsAsErrors: '*'
 HeaderFilterRegex: '(src|examples|zzz_generated|credentials).*(?<!third_party.*repo)'
+CheckOptions:
+  bugprone-unsafe-functions.CustomFunctions: 'strncpy'
