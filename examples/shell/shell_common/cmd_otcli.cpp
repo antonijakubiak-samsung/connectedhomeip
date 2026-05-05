@@ -79,41 +79,39 @@ CHIP_ERROR cmd_otcli_help(int argc, char ** argv)
 
 #if CHIP_TARGET_STYLE_EMBEDDED
 
-#include <lib/support/StringBuilder.h>
-
 CHIP_ERROR cmd_otcli_dispatch(int argc, char ** argv)
 {
     CHIP_ERROR error = CHIP_NO_ERROR;
 
     VerifyOrExit(argc > 0, error = CHIP_ERROR_INVALID_ARGUMENT);
 
-    // Create a stack-allocated buffer of the specified maximum length
-    chip::StringBuilder<kMaxLineLength> builder;
+    { 
+        // Create a stack-allocated buffer of the specified maximum length
+        chip::StringBuilder<kMaxLineLength> builder;
 
-    for (int i = 0; i < argc; i++)
-    {
-        // Add() safely concatenates strings and prevents buffer overflows.
-        // We append a space after each argument to reconstruct the command line.
-        builder.Add(argv[i]);
-        builder.Add(" ");
-    }
+        for (int i = 0; i < argc; i++)
+        {
+            // Add() safely concatenates strings and prevents buffer overflows.
+            // We append a space after each argument to reconstruct the command line.
+            builder.Add(argv[i]);
+            builder.Add(" ");
+        }
 
-    // Verify if all arguments and spaces successfully fit into the buffer.
-    // If not, return an error rather than sending a truncated command.
-    VerifyOrExit(builder.Fit(), error = CHIP_ERROR_BUFFER_TOO_SMALL);
+        // Verify if all arguments and spaces successfully fit into the buffer.
+        // If not, return an error rather than sending a truncated command.
+        VerifyOrExit(builder.Fit(), error = CHIP_ERROR_BUFFER_TOO_SMALL);
 
-    chip::DeviceLayer::ThreadStackMgr().LockThreadStack();
-
+        chip::DeviceLayer::ThreadStackMgr().LockThreadStack();
 #if OPENTHREAD_API_VERSION >= 85
-    // builder.c_str() guarantees proper null-termination.
-    // const_cast is used just in case the legacy OpenThread API lacks 'const' in its signature.
-    otCliInputLine(const_cast<char *>(builder.c_str()));
+        // builder.c_str() guarantees proper null-termination.
+        // const_cast is used just in case the legacy OpenThread API lacks 'const' in its signature.
+        otCliInputLine(const_cast<char *>(builder.c_str()));
 #else
-    // Safely calculate the actual string length using standard strlen()
-    otCliConsoleInputLine(const_cast<char *>(builder.c_str()), strlen(builder.c_str()));
+        // Safely calculate the actual string length using standard strlen()
+        otCliConsoleInputLine(const_cast<char *>(builder.c_str()), strlen(builder.c_str()));
 #endif
-
-    chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
+        chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
+    } 
 
 exit:
     return error;
