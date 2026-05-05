@@ -125,16 +125,6 @@ extern "C" {
 
 int main(int argc, char * argv[])
 {
-    // =====================================================================
-    // FIXME linter test
-    // =====================================================================
-    char dest[256];
-    const char * src = "test_lintera";
-    // FIXME remove this block
-    strncpy(dest, src, sizeof(dest) - 1);
-    dest[sizeof(dest) - 1] = '\0';
-    // =====================================================================
-
 #if CHIP_EXAMPLE_ENABLE_DIAGNOSTIC_LOGS
     if (ChipLinuxAppInit(argc, argv, AppOptions::GetOptions()) != 0)
 #else
