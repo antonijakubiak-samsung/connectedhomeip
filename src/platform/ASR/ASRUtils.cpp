@@ -289,13 +289,13 @@ CHIP_ERROR ASRUtils::asr_wifi_connect(void)
     // Bounds check added to prevent buffer overflow vulnerabilities.
     VerifyOrReturnError(stationConfig.ssid_len <= sizeof(conf.wifi_ssid), CHIP_ERROR_INVALID_ARGUMENT);
 
-    // Note on avoiding `CopyString` and `memcpy`: 
-    // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`). 
-    // If the SSID exactly fills the hardware buffer, `CopyString` would truncate 
+    // Note on avoiding `CopyString` and `memcpy`:
+    // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`).
+    // If the SSID exactly fills the hardware buffer, `CopyString` would truncate
     // the last character, introducing a critical connection bug.
-    // While `memcpy` avoids this and seems logically correct for known lengths, 
-    // I deliberately retain `strncpy` to preserve the exact legacy memory-padding 
-    // behavior expected by the ASR vendor SDK. Without hardware to test on, this 
+    // While `memcpy` avoids this and seems logically correct for known lengths,
+    // I deliberately retain `strncpy` to preserve the exact legacy memory-padding
+    // behavior expected by the ASR vendor SDK. Without hardware to test on, this
     // guarantees no unintended regressions.
     strncpy((char *) conf.wifi_ssid, (char *) stationConfig.wifi_ssid, stationConfig.ssid_len); // NOLINT(bugprone-unsafe-functions)
 

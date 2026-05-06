@@ -160,13 +160,13 @@ CHIP_ERROR BflbWiFiDriver::ConnectWiFiNetwork(const char * ssid, uint8_t ssidLen
     // Bounds check added to prevent buffer overflow vulnerabilities.
     VerifyOrReturnError(ssidLen <= sizeof(conn_param.ssid), CHIP_ERROR_INVALID_ARGUMENT);
 
-    // Note on avoiding `CopyString` and `memcpy`: 
-    // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`). 
-    // If the SSID exactly fills the hardware buffer (e.g., 32 bytes), `CopyString` 
+    // Note on avoiding `CopyString` and `memcpy`:
+    // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`).
+    // If the SSID exactly fills the hardware buffer (e.g., 32 bytes), `CopyString`
     // would truncate the last character, introducing a critical connection bug.
-    // While `memcpy` avoids this and seems logically correct for known lengths, 
-    // I deliberately retain `strncpy` to preserve the exact legacy memory-padding 
-    // behavior expected by the vendor SDK. Without hardware to test on, this 
+    // While `memcpy` avoids this and seems logically correct for known lengths,
+    // I deliberately retain `strncpy` to preserve the exact legacy memory-padding
+    // behavior expected by the vendor SDK. Without hardware to test on, this
     // guarantees no unintended regressions.
     strncpy((char *) conn_param.ssid, ssid, ssidLen); // NOLINT(bugprone-unsafe-functions)
     conn_param.ssid_len = ssidLen;

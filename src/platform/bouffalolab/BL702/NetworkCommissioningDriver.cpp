@@ -275,14 +275,15 @@ void BflbWiFiDriver::OnScanWiFiNetworkDone(void * opaque)
             // Using VerifyOrReturn() instead of VerifyOrReturnError() because this function returns void.
             VerifyOrReturn(kMaxWiFiSSIDLength <= sizeof(p->ssid));
 
-            // Note on avoiding `CopyString` and `memcpy`: 
-            // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`). 
-            // If the scanned SSID exactly fills the hardware buffer (e.g., 32 bytes), `CopyString` 
+            // Note on avoiding `CopyString` and `memcpy`:
+            // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`).
+            // If the scanned SSID exactly fills the hardware buffer (e.g., 32 bytes), `CopyString`
             // would truncate the last character, causing an SSID mismatch in scan results.
-            // While `memcpy` avoids this, I deliberately retain `strncpy` to preserve 
-            // the exact legacy memory-padding behavior expected by the BL702 WiFi driver. 
+            // While `memcpy` avoids this, I deliberately retain `strncpy` to preserve
+            // the exact legacy memory-padding behavior expected by the BL702 WiFi driver.
             // Without hardware to test on, this guarantees no unintended regressions.
-            strncpy((char *) p->ssid, (const char *) pmsg->records[i].ssid, kMaxWiFiSSIDLength); // NOLINT(bugprone-unsafe-functions)
+            strncpy((char *) p->ssid, (const char *) pmsg->records[i].ssid,
+                    kMaxWiFiSSIDLength); // NOLINT(bugprone-unsafe-functions)
 
             p->ssidLen         = strlen((char *) pmsg->records[i].ssid);
             p->channel         = pmsg->records[i].channel;
