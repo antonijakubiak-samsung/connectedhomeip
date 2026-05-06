@@ -23,6 +23,7 @@ Checks: >
   -bugprone-misplaced-widening-cast,
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-narrowing-conversions,
+  -bugprone-not-null-terminated-result,
   -bugprone-pointer-arithmetic-on-polymorphic-object,
   -bugprone-reserved-identifier,
   -bugprone-signed-bitwise,
