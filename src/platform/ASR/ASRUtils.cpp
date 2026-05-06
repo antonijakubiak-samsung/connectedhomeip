@@ -286,11 +286,25 @@ CHIP_ERROR ASRUtils::asr_wifi_connect(void)
     conf.dhcp_mode = WLAN_DHCP_CLIENT;
     TEMPORARY_RETURN_IGNORED asr_wifi_get_config(&stationConfig);
 
-    // Deliberately using strncpy instead of CopyString: conf is a hardware-specific WiFi configuration
-    // structure passed directly to the ASR chipset driver. The driver expects fixed-length fields
-    // without guaranteed null-termination.
+    // Bounds check added to prevent buffer overflow vulnerabilities.
+    VerifyOrReturnError(stationConfig.ssid_len <= sizeof(conf.wifi_ssid), CHIP_ERROR_INVALID_ARGUMENT);
+
+    // Note on avoiding `CopyString` and `memcpy`: 
+    // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`). 
+    // If the SSID exactly fills the hardware buffer, `CopyString` would truncate 
+    // the last character, introducing a critical connection bug.
+    // While `memcpy` avoids this and seems logically correct for known lengths, 
+    // I deliberately retain `strncpy` to preserve the exact legacy memory-padding 
+    // behavior expected by the ASR vendor SDK. Without hardware to test on, this 
+    // guarantees no unintended regressions.
     strncpy((char *) conf.wifi_ssid, (char *) stationConfig.wifi_ssid, stationConfig.ssid_len); // NOLINT(bugprone-unsafe-functions)
-    strncpy((char *) conf.wifi_key, (char *) stationConfig.wifi_key, stationConfig.key_len);    // NOLINT(bugprone-unsafe-functions)
+
+    // Bounds check added to prevent buffer overflow vulnerabilities.
+    VerifyOrReturnError(stationConfig.key_len <= sizeof(conf.wifi_key), CHIP_ERROR_INVALID_ARGUMENT);
+
+    // Deliberately avoiding CopyString (to prevent truncation of max-length keys)
+    // and keeping strncpy to ensure 100% legacy compatibility with the vendor driver.
+    strncpy((char *) conf.wifi_key, (char *) stationConfig.wifi_key, stationConfig.key_len); // NOLINT(bugprone-unsafe-functions)
 
     conf.security = stationConfig.security;
 

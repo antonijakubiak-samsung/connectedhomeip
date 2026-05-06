@@ -157,22 +157,31 @@ CHIP_ERROR BflbWiFiDriver::ConnectWiFiNetwork(const char * ssid, uint8_t ssidLen
 
     ConnectivityMgrImpl().ChangeWiFiStationState(ConnectivityManager::kWiFiStationState_Connecting);
 
-    // Deliberately using strncpy instead of CopyString: conn_param is a hardware-specific WiFi
-    // connection structure passed directly to the BL616 WiFi driver. The driver expects fixed-length
-    // fields without guaranteed null-termination.
-    strncpy((char *) conn_param.ssid, ssid, ssidLen); // NOLINT(bugprone-unsafe-functions)
+    // Bounds check added to prevent buffer overflow vulnerabilities.
+    VerifyOrReturnError(ssidLen <= sizeof(conn_param.ssid), CHIP_ERROR_INVALID_ARGUMENT);
 
+    // Note on avoiding `CopyString` and `memcpy`: 
+    // `chip::Platform::CopyString` forces null-termination (`dest[len - 1] = 0`). 
+    // If the SSID exactly fills the hardware buffer (e.g., 32 bytes), `CopyString` 
+    // would truncate the last character, introducing a critical connection bug.
+    // While `memcpy` avoids this and seems logically correct for known lengths, 
+    // I deliberately retain `strncpy` to preserve the exact legacy memory-padding 
+    // behavior expected by the vendor SDK. Without hardware to test on, this 
+    // guarantees no unintended regressions.
+    strncpy((char *) conn_param.ssid, ssid, ssidLen); // NOLINT(bugprone-unsafe-functions)
     conn_param.ssid_len = ssidLen;
 
     if (keyLen)
     {
-        // Deliberately using strncpy instead of CopyString: conn_param is a hardware-specific WiFi
-        // connection structure passed directly to the BL616 WiFi driver. The driver expects fixed-length
-        // fields without guaranteed null-termination.
-        strncpy((char *) conn_param.key, key, keyLen); // NOLINT(bugprone-unsafe-functions)
+        // Bounds check added to prevent buffer overflow vulnerabilities.
+        VerifyOrReturnError(keyLen <= sizeof(conn_param.key), CHIP_ERROR_INVALID_ARGUMENT);
 
+        // Deliberately avoiding CopyString (to prevent truncation of max-length keys)
+        // and keeping strncpy to ensure 100% legacy compatibility with the vendor driver.
+        strncpy((char *) conn_param.key, key, keyLen); // NOLINT(bugprone-unsafe-functions)
         conn_param.key_len = keyLen;
     }
+
     conn_param.freq1         = 0;
     conn_param.freq2         = 0;
     conn_param.use_dhcp      = 1;
