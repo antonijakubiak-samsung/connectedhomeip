@@ -84,7 +84,8 @@ class BluetoothManager : BleCallback {
                 if (producerScope.channel.isClosedForSend) {
                   Log.w(TAG, "Bluetooth device was scanned, but channel is already closed")
                 } else {
-                  offer(device)
+                  // offer(device)
+                  trySend(device).isSuccess
                 }
               }
 
