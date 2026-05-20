@@ -25,22 +25,10 @@
 #include <cstring>
 
 using namespace chip;
-using namespace chip::ArgParser;
-
-// App custom argument handling
-constexpr uint16_t kOptionDeviceType    = 0xffd0;
-constexpr uint16_t kOptionWiFi          = 0xffd2;
-constexpr uint16_t kOptionKVS           = 0xffd3;
-constexpr uint16_t kOptionDiscriminator = 0xffd4;
-constexpr uint16_t kOptionVendorId      = 0xffd5;
-constexpr uint16_t kOptionProductId     = 0xffd6;
-constexpr uint16_t kOptionPort          = 0xffd7;
-constexpr uint16_t kOptionInterfaceId   = 0xffd8;
-constexpr uint16_t kOptionBLE           = 0xffd9;
-constexpr uint16_t kOptionGroupcast     = 0xffda;
 
 DeviceTypeParser AppOptions::sParser;
 AppOptions::AppConfig AppOptions::mConfig;
+bool AppOptions::mShowHelp = false;
 
 const AppOptions::AppConfig & AppOptions::GetConfig()
 {
@@ -55,128 +43,100 @@ const AppOptions::AppConfig & AppOptions::GetConfig()
     return mConfig;
 }
 
-bool AppOptions::AllDevicesAppOptionHandler(const char * program, OptionSet * options, int identifier, const char * name,
-                                            const char * value)
+lyra::cli & AppOptions::GetCli()
 {
-    switch (identifier)
+    static lyra::cli sCli;
+
+    static bool sInitialized = false;
+    if (!sInitialized)
     {
-    case kOptionDeviceType: {
-        if (sParser.ParseSingleDeviceString(value) != CHIP_NO_ERROR)
-        {
-            return false;
-        }
-        mConfig.deviceTypeEntries = sParser.GetDeviceTypeEntries();
-        return true;
-    }
-    case kOptionBLE:
-        if (!ParseInt(value, mConfig.bleController))
-        {
-            ChipLogError(Support, "Invalid BLE controller specified: %s", value);
-            return false;
-        }
-        return true;
-    case kOptionWiFi:
-        mConfig.enableWiFi = true;
-        ChipLogProgress(AppServer, "WiFi usage enabled");
-        return true;
-    case kOptionKVS:
-        mConfig.kvsPath = value;
-        return true;
-    case kOptionDiscriminator: {
-        char * endptr;
-        unsigned long val = strtoul(value, &endptr, 0);
-        if (*endptr != '\0' || val > 0xFFF)
-        {
-            ChipLogError(Support, "Invalid discriminator: %s", value);
-            return false;
-        }
-        mConfig.discriminator = static_cast<uint16_t>(val);
-        return true;
-    }
-    case kOptionVendorId:
-        mConfig.vendorId = static_cast<uint16_t>(strtoul(value, nullptr, 0));
-        return true;
-    case kOptionProductId:
-        mConfig.productId = static_cast<uint16_t>(strtoul(value, nullptr, 0));
-        return true;
-    case kOptionPort: {
-        char * endptr;
-        unsigned long val = strtoul(value, &endptr, 0);
-        if (*endptr != '\0' || val > 0xFFFF)
-        {
-            ChipLogError(Support, "Invalid port: %s", value);
-            return false;
-        }
-        mConfig.port = static_cast<uint16_t>(val);
-        ChipLogProgress(AppServer, "Port option set to %u", static_cast<uint16_t>(val));
-        return true;
-    }
-    case kOptionInterfaceId:
-        mConfig.interfaceId = static_cast<uint32_t>(strtoul(value, nullptr, 0));
-        return true;
-    case kOptionGroupcast:
-        mConfig.enableGroupcast = true;
-        ChipLogProgress(AppServer, "Groupcast usage enabled");
-        return true;
-    default:
-        ChipLogError(Support, "%s: INTERNAL ERROR: Unhandled option: %s\n", program, name);
-        return false;
+        sInitialized = true;
+
+        // --device <type> or <type:endpoint> or <type:endpoint,parent=parentId>
+        // Can be specified multiple times.
+        sCli |= lyra::opt(
+                    [](const std::string & value) {
+                        if (sParser.ParseSingleDeviceString(value.c_str()) != CHIP_NO_ERROR)
+                        {
+                            ChipLogError(Support, "Invalid device specification: %s", value.c_str());
+                        }
+                        else
+                        {
+                            mConfig.deviceTypeEntries = sParser.GetDeviceTypeEntries();
+                        }
+                    },
+                    "device")
+                    ["--device"]("Select the device to start up. Format: 'type' or 'type:endpoint' or "
+                                 "'type:endpoint,parent=parentId'. Can be specified multiple times.");
+
+#if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
+        sCli |= lyra::opt(mConfig.bleController, "number")["--ble-controller"]("Select the BLE controller to use (default: 0)");
+#endif
+
+#if CHIP_DEVICE_CONFIG_ENABLE_WIFI
+        sCli |= lyra::opt([&](bool) {
+                    mConfig.enableWiFi = true;
+                    ChipLogProgress(AppServer, "WiFi usage enabled");
+                })["--wifi"]("Enable wifi support for commissioning");
+#endif
+
+        sCli |= lyra::opt(mConfig.kvsPath, "path")["--KVS"]("Key-Value Store path");
+
+        sCli |= lyra::opt(
+                    [](const std::string & value) {
+                        unsigned long val = std::strtoul(value.c_str(), nullptr, 0);
+                        if (val > 0xFFF)
+                        {
+                            ChipLogError(Support, "Invalid discriminator: %s", value.c_str());
+                            return;
+                        }
+                        mConfig.discriminator = static_cast<uint16_t>(val);
+                    },
+                    "discriminator")["--discriminator"]("Setup discriminator (12-bit value, 0-4095)");
+
+        sCli |= lyra::opt(
+                    [](const std::string & value) {
+                        mConfig.vendorId = static_cast<uint16_t>(std::strtoul(value.c_str(), nullptr, 0));
+                    },
+                    "vendor-id")["--vendor-id"]("Vendor ID");
+
+        sCli |= lyra::opt(
+                    [](const std::string & value) {
+                        mConfig.productId = static_cast<uint16_t>(std::strtoul(value.c_str(), nullptr, 0));
+                    },
+                    "product-id")["--product-id"]("Product ID");
+
+        sCli |= lyra::opt(
+                    [](const std::string & value) {
+                        unsigned long val = std::strtoul(value.c_str(), nullptr, 0);
+                        if (val > 0xFFFF)
+                        {
+                            ChipLogError(Support, "Invalid port: %s", value.c_str());
+                            return;
+                        }
+                        mConfig.port = static_cast<uint16_t>(val);
+                        ChipLogProgress(AppServer, "Port option set to %u", static_cast<uint16_t>(val));
+                    },
+                    "port")["--port"]("Operational port");
+
+        sCli |= lyra::opt(
+                    [](const std::string & value) {
+                        mConfig.interfaceId = static_cast<uint32_t>(std::strtoul(value.c_str(), nullptr, 0));
+                    },
+                    "interface-id")["--interface-id"]("Network interface ID");
+
+        sCli |= lyra::opt([&](bool) {
+                    mConfig.enableGroupcast = true;
+                    ChipLogProgress(AppServer, "Groupcast usage enabled");
+                })["--groupcast"]("Enable groupcast support");
+
+        sCli |= lyra::help(mShowHelp);
     }
 
-    return true;
+    return sCli;
 }
 
-OptionSet * AppOptions::GetOptions()
+bool AppOptions::ShowHelp()
 {
-    static OptionDef sAllDevicesAppOptionDefs[] = {
-        { "device", kArgumentRequired, kOptionDeviceType },
-#if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
-        { "ble-controller", kArgumentRequired, kOptionBLE },
-#endif
-#if CHIP_DEVICE_CONFIG_ENABLE_WIFI
-        { "wifi", kNoArgument, kOptionWiFi },
-#endif
-        { "KVS", kArgumentRequired, kOptionKVS },
-        { "discriminator", kArgumentRequired, kOptionDiscriminator },
-        { "vendor-id", kArgumentRequired, kOptionVendorId },
-        { "product-id", kArgumentRequired, kOptionProductId },
-        { "port", kArgumentRequired, kOptionPort },
-        { "interface-id", kArgumentRequired, kOptionInterfaceId },
-        { "groupcast", kNoArgument, kOptionGroupcast },
-        {}, // need empty terminator
-    };
-
-    static const std::string gHelpText = []() {
-        // Device option - this is dynamic
-        std::string result = "  --device <";
-        for (auto & name : app::DeviceFactory::GetInstance().SupportedDeviceTypes())
-        {
-            result.append(name);
-            result.append("|");
-        }
-        result.replace(result.length() - 1, 1, ">");
-        result += "\n";
-        result += "       Select the device to start up. Format: 'type' or 'type:endpoint' or 'type:endpoint,parent=parentId'\n";
-        result += "       Can be specified multiple times for multi-endpoint devices.\n";
-        result += "       Example: --device chime:1 --device speaker:2,parent=1\n\n";
-
-#if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
-        result += "  --ble-controller <number>\n";
-        result += "       Select the BLE controller to use (default: 0)\n\n";
-#endif
-
-#if CHIP_DEVICE_CONFIG_ENABLE_WIFI
-        result += "  --wifi\n";
-        result += "       Enable wifi support for commissioning\n\n";
-#endif
-
-        return result;
-    }();
-
-    static OptionSet sCmdLineOptions = { AllDevicesAppOptionHandler, // handler function
-                                         sAllDevicesAppOptionDefs,   // array of option definitions
-                                         "PROGRAM OPTIONS",          // help group
-                                         gHelpText.c_str() };
-
-    return &sCmdLineOptions;
+    return mShowHelp;
 }

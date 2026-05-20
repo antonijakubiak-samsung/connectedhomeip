@@ -43,6 +43,7 @@
 #include <platform/DiagnosticDataProvider.h>
 #include <platform/PlatformManager.h>
 #include <setup_payload/OnboardingCodesUtil.h>
+#include <iostream>
 #include <string>
 #include <system/SystemLayer.h>
 
@@ -53,7 +54,6 @@ using namespace chip::app;
 using namespace chip::Platform;
 using namespace chip::DeviceLayer;
 using namespace chip::app::Clusters;
-using namespace chip::ArgParser;
 
 namespace {
 AppMainLoopImplementation * gMainLoopImplementation = nullptr;
@@ -376,9 +376,16 @@ CHIP_ERROR Initialize(int argc, char * argv[])
     ChipLogProgress(AppServer, "Initializing...");
     ReturnErrorOnFailure(Platform::MemoryInit());
 
-    static OptionSet * sAppOptionSets[] = { AppOptions::GetOptions(), nullptr };
-    if (!ArgParser::ParseArgs(argv[0], argc, argv, sAppOptionSets))
+    auto result = AppOptions::GetCli().parse({ argc, argv });
+    if (!result)
     {
+        ChipLogError(AppServer, "Error in command line: %s", result.message().c_str());
+        return CHIP_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (AppOptions::ShowHelp())
+    {
+        std::cout << AppOptions::GetCli() << std::endl;
         return CHIP_ERROR_INVALID_ARGUMENT;
     }
 
@@ -420,6 +427,12 @@ int main(int argc, char * argv[])
 
     if (CHIP_ERROR err = Initialize(argc, argv); err != CHIP_NO_ERROR)
     {
+        // If help was requested, Initialize already printed the help text and
+        // we exit cleanly.
+        if (AppOptions::ShowHelp())
+        {
+            return 0;
+        }
         ChipLogError(AppServer, "Initialize() failed: %" CHIP_ERROR_FORMAT, err.Format());
         chipDie();
     }

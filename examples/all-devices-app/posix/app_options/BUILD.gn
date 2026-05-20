@@ -31,6 +31,7 @@ source_set("app-options") {
     "${chip_root}/examples/common/tracing:commandline",
     "${chip_root}/examples/platform/linux:app-options",
     "${chip_root}/src/lib",
+    "${chip_root}/third_party/lyra",
   ]
 
   public_configs = [
