@@ -515,6 +515,10 @@ jobs:
                   CHIP_ROOT_PATH=examples/placeholder/linux
                   CHIP_ROOT_PATH="$CHIP_ROOT_PATH" BUILD_TYPE="$BUILD_TYPE" scripts/build/gn_gen.sh --args="$GN_ARGS"
                   scripts/run_in_build_env.sh "ninja -C ./out/$BUILD_TYPE"
+            # === DEBUG ===
+            - name: Setup tmate session for interactive debug (Simulated Device Fail)
+              uses: mxschmitt/action-tmate@v3
+              if: failure() # Odpali się, jeśli budowanie Simulated Device rzuci błędem
             - name: Setup Build, Run Build and Run Tests (asan + target_os=all)
               # We can't enable leak checking here in LSAN_OPTIONS, because on
               # Darwin that's only supported with a new enough clang, and we're
