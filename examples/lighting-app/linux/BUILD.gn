@@ -55,6 +55,7 @@ executable("chip-lighting-app") {
     "${chip_root}/src/app/common:ids",
     "${chip_root}/src/lib",
     "${chip_root}/third_party/jsoncpp",
+    "${chip_root}/third_party/tracy:tracy",
   ]
   if (chip_examples_enable_diagnostic_logs) {
     sources += [
