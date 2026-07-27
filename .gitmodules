@@ -342,3 +342,7 @@
 [submodule "third_party/miniaudio/repo"]
 	path = third_party/miniaudio/repo
 	url = https://github.com/mackron/miniaudio
+[submodule "third_party/tracy/tracy"]
+	path = third_party/tracy/tracy
+	url = https://github.com/wolfpld/tracy.git
+	branch = v0.13.1
