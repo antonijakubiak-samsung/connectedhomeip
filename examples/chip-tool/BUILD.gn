@@ -15,7 +15,8 @@
 import("//build_overrides/build.gni")
 import("//build_overrides/chip.gni")
 
-import("${chip_root}/config/standalone/args.gni")
+# Import is_tracy from build.gni (already imported above)
+# config/standalone/args.gni removed - is_tracy moved to build_overrides/build.gni
 
 import("${chip_root}/build/chip/tools.gni")
 import("${chip_root}/examples/chip-tool/chip-tool.gni")
@@ -153,6 +154,7 @@ static_library("chip-tool-utils") {
 executable("chip-tool") {
   sources = [ "main.cpp" ]
 
+  defines = []
   deps = [
     ":chip-tool-utils",
     "${chip_root}/src/platform/logging:stdio",

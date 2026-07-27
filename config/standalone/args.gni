@@ -18,10 +18,7 @@ import("//build_overrides/chip.gni")
 # options are used from examples/.
 chip_build_tests = false
 
-# Enable Tracy profiling support
-declare_args() {
-  is_tracy = false
-}
+# Note: is_tracy is now defined in //build_overrides/build.gni for global access
 
 pw_build_PIP_CONSTRAINTS = [ "${chip_root}/scripts/setup/constraints.txt" ]
 pw_build_PIP_REQUIREMENTS =
