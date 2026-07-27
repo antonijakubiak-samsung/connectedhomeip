@@ -18,6 +18,8 @@ import("${chip_root}/build/chip/tools.gni")
 import("${chip_root}/src/app/common_flags.gni")
 import("${chip_root}/third_party/imgui/imgui.gni")
 
+import("${chip_root}/config/standalone/args.gni")
+
 assert(chip_build_tools)
 
 import("${chip_root}/examples/common/pigweed/pigweed_rpcs.gni")
@@ -55,8 +57,14 @@ executable("chip-lighting-app") {
     "${chip_root}/src/app/common:ids",
     "${chip_root}/src/lib",
     "${chip_root}/third_party/jsoncpp",
-    "${chip_root}/third_party/tracy:tracy",
   ]
+
+  # Tracy profiling support
+  if (is_tracy) {
+    deps += [ "${chip_root}/third_party/tracy:tracy" ]
+    defines += [ "TRACY_ENABLE" ]
+  }
+
   if (chip_examples_enable_diagnostic_logs) {
     sources += [
       "AppOptions.cpp",
@@ -126,10 +134,20 @@ executable("chip-lighting-app") {
     deps += pw_build_LINK_DEPS
 
     include_dirs += [ "${chip_root}/examples/common" ]
-  } else {
+
     # The system_rpc_server.cc file is in pigweed and doesn't compile with
     # -Wconversion, remove check for RPC build only.
-    cflags = [ "-Wconversion" ]
+    if (!is_tracy) {
+      cflags = [ "-Wconversion" ]
+    } else {
+      # Tracy needs -Wno-thread-safety-analysis, but also needs -Wconversion disabled
+      cflags = [ "-Wconversion", "-Wno-thread-safety-analysis" ]
+    }
+  } else {
+    # Non-RPC build
+    if (is_tracy) {
+      cflags = [ "-Wno-thread-safety-analysis" ]
+    }
   }
 
   output_dir = root_out_dir
