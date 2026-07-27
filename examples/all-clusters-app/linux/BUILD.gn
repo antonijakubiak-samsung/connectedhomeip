@@ -16,6 +16,8 @@ import("//build_overrides/build.gni")
 import("//build_overrides/chip.gni")
 import("${build_root}/config/compiler/compiler.gni")
 
+import("${chip_root}/config/standalone/args.gni")
+
 import("${chip_root}/src/lib/lib.gni")
 import("${chip_root}/src/platform/device.gni")
 
@@ -152,6 +154,12 @@ if (is_libfuzzer) {
       ":chip-all-clusters-common",
       "${chip_root}/examples/platform/linux:app-main",
     ]
+
+    # Tracy profiling support
+    if (is_tracy) {
+      deps += [ "${chip_root}/third_party/tracy:tracy" ]
+      defines += [ "TRACY_ENABLE" ]
+    }
 
     cflags = [ "-Wconversion" ]
 

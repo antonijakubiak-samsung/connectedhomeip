@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import("//build_overrides/chip.gni")
+import("${chip_root}/config/standalone/args.gni")
 import("${chip_root}/examples/common/pigweed/pigweed_rpcs.gni")
 import("${chip_root}/src/app/common_flags.gni")
 import("${chip_root}/src/lib/core/core.gni")
@@ -92,6 +93,12 @@ executable("all-devices-app") {
     "${chip_root}/zzz_generated/app-common/devices/",
   ]
   defines = []
+
+  # Tracy profiling support
+  if (is_tracy) {
+    deps += [ "${chip_root}/third_party/tracy:tracy" ]
+    defines += [ "TRACY_ENABLE" ]
+  }
 
   if (chip_enable_transport_trace) {
     deps += [

@@ -20,9 +20,6 @@
 #include "LightingManager.h"
 #include <AppMain.h>
 
-// Tracy Profiler - CPU and memory profiling
-#include "tracy/Tracy.hpp"
-
 #if CHIP_EXAMPLE_ENABLE_DIAGNOSTIC_LOGS
 #include "AppOptions.h"
 #include "diagnostic-logs-provider-delegate-impl.h"
@@ -128,16 +125,6 @@ extern "C" {
 
 int main(int argc, char * argv[])
 {
-#if 1
-    int *leak_test = new int[500];
-    leak_test[0] = 1;
-    leak_test[1] = 1;
-
-    for (int i = 2; i < 500; i++) {
-        leak_test[i] = leak_test[i-1] + leak_test[i-2];
-    }
-#endif
-
 #if CHIP_EXAMPLE_ENABLE_DIAGNOSTIC_LOGS
     if (ChipLinuxAppInit(argc, argv, AppOptions::GetOptions()) != 0)
 #else
